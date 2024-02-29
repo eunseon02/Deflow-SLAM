@@ -1,5 +1,6 @@
 
 import torch
+import datetime
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -20,7 +21,8 @@ class Logger:
 
         lr = self.scheduler.get_lr().pop()
         metrics_data = [self.running_loss[k]/SUM_FREQ for k in self.running_loss.keys()]
-        training_str = "[{:6d}, {:10.7f}] ".format(self.total_steps+1, lr)
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        training_str = "[{}, {:6d}, {:10.7f}] ".format(now, self.total_steps+1, lr)
         metrics_str = ("{:10.4f}, "*len(metrics_data)).format(*metrics_data)
         
         # print the training status

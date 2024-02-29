@@ -18,12 +18,15 @@ class ConvGRU(nn.Module):
 
     def forward(self, net, *inputs):
         inp = torch.cat(inputs, dim=1)
+        # print("net", net.size())
+        # print("inp", inp.size())
         net_inp = torch.cat([net, inp], dim=1)
 
         b, c, h, w = net.shape
         glo = torch.sigmoid(self.w(net)) * net
         glo = glo.view(b, c, h*w).mean(-1).view(b, c, 1, 1)
 
+        # print("net_inp", net_inp.size()) 
         z = torch.sigmoid(self.convz(net_inp) + self.convz_glo(glo))
         r = torch.sigmoid(self.convr(net_inp) + self.convr_glo(glo))
         q = torch.tanh(self.convq(torch.cat([r*net, inp], dim=1)) + self.convq_glo(glo))

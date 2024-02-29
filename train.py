@@ -9,6 +9,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from data_readers.factory import dataset_factory
+import datetime
 
 from lietorch import SO3, SE3, Sim3
 from geom import losses
@@ -52,7 +53,7 @@ def train(gpu, args):
     model.cuda()
     model.train()
 
-    model = DDP(model, device_ids=[gpu], find_unused_parameters=False)
+    model = DDP(model, device_ids=[gpu], find_unused_parameters=True)
 
     if args.ckpt is not None:
         model.load_state_dict(torch.load(args.ckpt))
@@ -138,6 +139,11 @@ def train(gpu, args):
             if total_steps >= args.steps:
                 should_keep_training = False
                 break
+            # now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # print(f"[{now}] Iteration {i_batch+1}: Loss = {loss.item()}")
+
+            
+
 
     dist.destroy_process_group()
                 
@@ -184,4 +190,3 @@ if __name__ == '__main__':
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12356'
     mp.spawn(train, nprocs=args.gpus, args=(args,))
-

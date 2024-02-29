@@ -28,16 +28,37 @@ def pose_retr(poses, dx, ii):
     return poses.retr(scatter_sum(dx, ii, dim=1, dim_size=poses.shape[1]))
 
 
-def BA(target, weight, eta, poses, disps, intrinsics, ii, jj, fixedp=1, rig=1):
+def BA(target, weight, logits, eta, poses, disps, intrinsics, ii, jj, fixedp=1, rig=1):
     """ Full Bundle Adjustment """
 
     B, P, ht, wd = disps.shape
+    # print("logits", logits.size())
+
     N = ii.shape[0]
     D = poses.manifold_dim
+
+
+    # print("B", B)
+    # print("P", P)
+    # print("ht", ht)
+    # print("wd", wd)
+    # print("N", N)
+
+    
 
     ### 1: commpute jacobians and residuals ###
     coords, valid, (Ji, Jj, Jz) = pops.projective_transform(
         poses, disps, intrinsics, ii, jj, jacobian=True)
+    # print("valid", valid.size())
+
+    # logits_mask = logits.squeeze(-1) > 0.5 
+    # print("logits_mask", logits_mask.size())
+    # print("logits_mask.float()", logits_mask.float().size())
+
+    # valid = valid * logits_mask.float()
+    clamped_logits = torch.clamp(logits, min=0.0)
+    valid = valid * clamped_logits
+    # print("logits", logits)
 
     r = (target - coords).view(B, N, -1, 1)
     w = .001 * (valid * weight).view(B, N, -1, 1)
@@ -138,6 +159,8 @@ def MoBA(target, weight, eta, poses, disps, intrinsics, ii, jj, fixedp=1, rig=1)
     P = P // rig - fixedp
     ii = ii // rig - fixedp
     jj = jj // rig - fixedp
+    # jj = torch.div(jj, rig, rounding_mode='trunc') - fixedp
+
 
     H = safe_scatter_add_mat(Hii, ii, ii, P, P) + \
         safe_scatter_add_mat(Hij, ii, jj, P, P) + \
